@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kebab Case Generator</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body class="min-h-screen bg-gray-100 text-gray-800">
+  <main
+    x-data="kebabGenerator()"
+    class="mx-auto max-w-2xl px-4 py-12"
+  >
+    <div class="overflow-hidden rounded-2xl bg-white shadow-xl">
+      <header class="bg-indigo-600 px-6 py-8 text-white">
+        <h1 class="text-3xl font-bold">Kebab Case Generator</h1>
+        <p class="mt-2 text-indigo-100">
+          Convert any string into kebab-case instantly.
+        </p>
+      </header>
+
+      <section class="space-y-6 p-6">
+        <div>
+          <label for="inputText" class="mb-2 block font-semibold">
+            Input string
+          </label>
+
+          <textarea
+            id="inputText"
+            x-model="input"
+            rows="4"
+            placeholder="Enter your text here..."
+            class="w-full rounded-lg border border-gray-300 p-3
+                   outline-none transition focus:border-indigo-500
+                   focus:ring-2 focus:ring-indigo-200"
+          ></textarea>
+
+          <div class="mt-2 flex justify-between text-sm text-gray-500">
+            <span x-text="`${input.length} characters`"></span>
+
+            <button
+              @click="input = ''; copied = false"
+              class="text-red-600 hover:text-red-800"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <label class="font-semibold">Kebab-case output</label>
+            <span class="rounded-full bg-green-100 px-3 py-1
+                         text-xs font-medium text-green-700">
+              Live preview
+            </span>
+          </div>
+
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <code
+              x-text="output || 'Your output will appear here...'"
+              class="block break-all text-indigo-700"
+            ></code>
+
+            <div class="mt-4 flex justify-end">
+              <button
+                @click="copyOutput()"
+                :disabled="!output"
+                class="rounded-lg bg-indigo-600 px-4 py-2
+                       text-sm font-medium text-white
+                       hover:bg-indigo-700 disabled:cursor-not-allowed
+                       disabled:opacity-50"
+                x-text="copied ? 'Copied!' : 'Copy output'"
+              ></button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="mb-3 font-semibold">Try an example</h2>
+
+          <div class="flex flex-wrap gap-2">
+            <template x-for="example in examples" :key="example">
+              <button
+                @click="input = example; copied = false"
+                x-text="example"
+                class="rounded-full border border-gray-300 px-3 py-2
+                       text-sm hover:border-indigo-500
+                       hover:bg-indigo-50"
+              ></button>
+            </template>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function kebabGenerator() {
+      return {
+        input: "Hello World! This is Kebab Case",
+        copied: false,
+
+        examples: [
+          "Hello World",
+          "JavaScript String Utils",
+          "MyReactComponent",
+          "API Response Handler",
+          "user_profile_name"
+        ],
+
+        get output() {
+          return this.input
+            .trim()
+            .normalize("NFKD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+            .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+            .replace(/[^a-zA-Z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .toLowerCase();
+        },
+
+        async copyOutput() {
+          if (!this.output) return;
+
+          try {
+            await navigator.clipboard.writeText(this.output);
+            this.copied = true;
+            setTimeout(() => this.copied = false, 1500);
+          } catch (error) {
+            // Clipboard access may require HTTPS or localhost.
+            alert("Unable to copy. Please copy the output manually.");
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
