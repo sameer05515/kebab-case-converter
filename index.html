@@ -1,171 +1,267 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kebab Case Generator</title>
-
+  <meta name="description" content="A fast, browser-based text case converter with bulk conversion and theme support." />
+  <title>Case Converter Toolkit — V2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    textarea { resize: vertical; }
+  </style>
 </head>
+<body x-data="caseConverter()" x-init="init()" :class="darkMode ? 'dark bg-gray-950 text-gray-100' : 'bg-slate-100 text-slate-800'" class="min-h-screen transition-colors duration-200">
+  <main class="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+    <header class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p class="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">Developer utility · V2</p>
+        <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">Case Converter Toolkit</h1>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300 sm:text-base">Convert one string or a whole list into common naming conventions. Everything runs in your browser.</p>
+      </div>
+      <button type="button" @click="toggleTheme()" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800" :aria-label="darkMode ? 'Switch to light theme' : 'Switch to dark theme'">
+        <span x-text="darkMode ? '☀️ Light theme' : '🌙 Dark theme'"></span>
+      </button>
+    </header>
 
-<body
-  x-data="kebabGenerator()"
-  x-init="initTheme()"
-  :class="darkMode ? 'dark bg-gray-950 text-gray-100' : 'bg-gray-100 text-gray-800'"
-  class="min-h-screen transition-colors duration-200">
-  <main class="mx-auto max-w-2xl px-4 py-12">
-    <div class="overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900">
-      <header class="bg-indigo-600 px-6 py-8 text-white">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <h1 class="text-3xl font-bold">Kebab Case Generator</h1>
-            <p class="mt-2 text-indigo-100">
-              Convert any string into kebab-case instantly.
-            </p>
-          </div>
-          <button
-            type="button"
-            @click="toggleTheme()"
-            class="shrink-0 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
-            :aria-label="darkMode ? 'Switch to light theme' : 'Switch to dark theme'"
-            :title="darkMode ? 'Switch to light theme' : 'Switch to dark theme'"
-          >
-            <span x-text="darkMode ? '☀️ Light' : '🌙 Dark'"></span>
-          </button>
+    <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold">Input</h2>
+          <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" x-text="`${input.length} characters`"></span>
         </div>
-      </header>
-
-      <section class="space-y-6 p-6">
-        <div>
-          <label for="inputText" class="mb-2 block font-semibold">
-            Input string
+        <label for="inputText" class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Text to convert</label>
+        <textarea id="inputText" x-model="input" @input="toast = ''" rows="7" placeholder="Try: HTTPResponse Handler, user_profile_name, or multiple lines..." class="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:focus:ring-indigo-950"></textarea>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <label class="inline-flex cursor-pointer items-center gap-2 text-sm">
+            <input type="checkbox" x-model="bulkMode" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+            <span class="font-medium">Bulk mode (convert each line)</span>
           </label>
+          <button type="button" @click="input = ''; toast = ''" class="text-sm font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400">Clear input</button>
+        </div>
 
-          <textarea
-            id="inputText"
-            x-model="input"
-            rows="4"
-            placeholder="Enter your text here..."
-            class="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900
-                   outline-none transition focus:border-indigo-500
-                   focus:ring-2 focus:ring-indigo-200
-                   dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100
-                   dark:placeholder-gray-400 dark:focus:ring-indigo-900"
-          ></textarea>
-
-          <div class="mt-2 flex justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span x-text="`${input.length} characters`"></span>
-
-            <button
-              @click="input = ''; copied = false"
-              class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-            >
-              Clear
-            </button>
+        <div class="rounded-xl border border-slate-200 p-4 dark:border-gray-700">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="font-semibold">Conversion settings</h3>
+            <button type="button" @click="resetSettings()" class="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400">Reset</button>
+          </div>
+          <div class="space-y-3 text-sm">
+            <label class="flex items-start gap-3">
+              <input type="checkbox" x-model="stripDiacritics" class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span><span class="font-medium">Normalize accented characters</span><span class="block text-xs text-slate-500 dark:text-slate-400">Example: café → cafe</span></span>
+            </label>
+            <label class="flex items-start gap-3">
+              <input type="checkbox" x-model="preserveNumbers" class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span><span class="font-medium">Preserve numbers</span><span class="block text-xs text-slate-500 dark:text-slate-400">Example: version2Name → version2-name</span></span>
+            </label>
+            <label class="flex items-start gap-3">
+              <input type="checkbox" x-model="removeSpecial" class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span><span class="font-medium">Remove special characters</span><span class="block text-xs text-slate-500 dark:text-slate-400">Ignore punctuation instead of treating it as a word separator.</span></span>
+            </label>
           </div>
         </div>
 
         <div>
-          <div class="mb-2 flex items-center justify-between">
-            <label class="font-semibold">Kebab-case output</label>
-            <span class="rounded-full bg-green-100 px-3 py-1
-                         text-xs font-medium text-green-700
-                         dark:bg-green-900/40 dark:text-green-300">
-              Live preview
-            </span>
-          </div>
-
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-            <code
-              x-text="output || 'Your output will appear here...'"
-              class="block break-all text-indigo-700 dark:text-indigo-300"
-            ></code>
-
-            <div class="mt-4 flex justify-end">
-              <button
-                @click="copyOutput()"
-                :disabled="!output"
-                class="rounded-lg bg-indigo-600 px-4 py-2
-                       text-sm font-medium text-white
-                       hover:bg-indigo-700 disabled:cursor-not-allowed
-                       disabled:opacity-50"
-                x-text="copied ? 'Copied!' : 'Copy output'"
-              ></button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h2 class="mb-3 font-semibold">Try an example</h2>
-
+          <h3 class="mb-3 font-semibold">Try an example</h3>
           <div class="flex flex-wrap gap-2">
             <template x-for="example in examples" :key="example">
-              <button
-                @click="input = example; copied = false"
-                x-text="example"
-                class="rounded-full border border-gray-300 px-3 py-2
-                       text-sm hover:border-indigo-500 hover:bg-indigo-50
-                       dark:border-gray-700 dark:hover:bg-gray-800"
-              ></button>
+              <button type="button" @click="input = example; toast = ''" x-text="example" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium transition hover:border-indigo-500 hover:bg-indigo-50 dark:border-gray-700 dark:hover:bg-gray-800"></button>
             </template>
           </div>
         </div>
-      </section>
-    </div>
+        <div class="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600 dark:bg-gray-800 dark:text-slate-300">
+          <p><kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">Ctrl</kbd> + <kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">Enter</kbd> focus results · <kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">Ctrl</kbd> + <kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">Shift</kbd> + <kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">C</kbd> copy kebab-case · <kbd class="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono dark:border-gray-600 dark:bg-gray-900">Esc</kbd> clear input</p>
+        </div>
+      </div>
+
+      <div id="results" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold">Converted results</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" x-text="bulkMode ? 'Each non-empty input line is converted separately.' : 'Live preview updates as you type.'"></p>
+          </div>
+          <button type="button" @click="copyAll()" :disabled="!input.trim()" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">Copy all</button>
+        </div>
+
+        <div class="space-y-3">
+          <template x-for="format in formats" :key="format.key">
+            <article class="rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 dark:border-gray-700 dark:hover:border-indigo-800">
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="font-semibold" x-text="format.label"></h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400" x-text="format.example"></p>
+                </div>
+                <button type="button" @click="copyFormat(format.key)" :disabled="!resultFor(format.key)" class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:hover:bg-gray-800" x-text="copiedFormat === format.key ? 'Copied!' : 'Copy'"></button>
+              </div>
+              <pre class="max-h-52 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 font-mono text-sm text-indigo-700 dark:bg-gray-950 dark:text-indigo-300" x-text="resultFor(format.key) || 'Output will appear here…'"></pre>
+            </article>
+          </template>
+        </div>
+        <div x-cloak x-show="toast" x-transition class="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" role="status" x-text="toast"></div>
+      </div>
+    </section>
+
+    <footer class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+      No server or database required · Theme preference is saved in this browser
+    </footer>
   </main>
 
   <script>
-    function kebabGenerator() {
+    function caseConverter() {
       return {
-        input: "Hello World! This is Kebab Case",
-        copied: false,
+        input: 'HTTPResponse Handler\nuser_profile_name\nMy React Component',
+        bulkMode: true,
         darkMode: false,
+        stripDiacritics: true,
+        preserveNumbers: true,
+        removeSpecial: false,
+        copiedFormat: '',
+        toast: '',
+        examples: [
+          'Hello World',
+          'HTTPResponse Handler',
+          'MyReactComponent',
+          'user_profile_name',
+          'version2 API response'
+        ],
+        formats: [
+          { key: 'kebab', label: 'kebab-case', example: 'my-variable-name' },
+          { key: 'camel', label: 'camelCase', example: 'myVariableName' },
+          { key: 'pascal', label: 'PascalCase', example: 'MyVariableName' },
+          { key: 'snake', label: 'snake_case', example: 'my_variable_name' },
+          { key: 'screaming', label: 'SCREAMING_SNAKE_CASE', example: 'MY_VARIABLE_NAME' },
+          { key: 'title', label: 'Title Case', example: 'My Variable Name' }
+        ],
 
-        initTheme() {
-          const savedTheme = localStorage.getItem("kebab-case-theme");
-          this.darkMode = savedTheme
-            ? savedTheme === "dark"
-            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        init() {
+          try {
+            const savedTheme = localStorage.getItem('case-converter-theme');
+            this.darkMode = savedTheme !== null
+              ? savedTheme === 'dark'
+              : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          } catch (_) {
+            this.darkMode = false;
+          }
+
+          window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              this.input = '';
+              this.toast = '';
+            }
+            if (event.ctrlKey && event.key === 'Enter') {
+              event.preventDefault();
+              document.getElementById('results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'c') {
+              event.preventDefault();
+              this.copyFormat('kebab');
+            }
+          });
         },
 
         toggleTheme() {
           this.darkMode = !this.darkMode;
-          localStorage.setItem("kebab-case-theme", this.darkMode ? "dark" : "light");
+          try { localStorage.setItem('case-converter-theme', this.darkMode ? 'dark' : 'light'); } catch (_) {}
         },
 
-        examples: [
-          "Hello World",
-          "JavaScript String Utils",
-          "MyReactComponent",
-          "API Response Handler",
-          "user_profile_name"
-        ],
-
-        get output() {
-          return this.input
-            .trim()
-            .normalize("NFKD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-            .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
-            .replace(/[^a-zA-Z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .toLowerCase();
+        resetSettings() {
+          this.stripDiacritics = true;
+          this.preserveNumbers = true;
+          this.removeSpecial = false;
+          this.toast = 'Settings reset.';
         },
 
-        async copyOutput() {
-          if (!this.output) return;
-
-          try {
-            await navigator.clipboard.writeText(this.output);
-            this.copied = true;
-            setTimeout(() => this.copied = false, 1500);
-          } catch (error) {
-            // Clipboard access may require HTTPS or localhost.
-            alert("Unable to copy. Please copy the output manually.");
+        words(value) {
+          let text = String(value ?? '');
+          if (this.stripDiacritics && text.normalize) {
+            text = text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
           }
+
+          // Split acronym boundaries first: HTTPResponse -> HTTP + Response.
+          text = text.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+          // Split lower/digit-to-uppercase boundaries: myName -> my + Name.
+          text = text.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+          if (this.preserveNumbers) {
+            text = text.replace(/([A-Za-z])(\d)/g, '$1 $2')
+                       .replace(/(\d)([A-Za-z])/g, '$1 $2');
+          } else {
+            text = text.replace(/\d+/g, ' ');
+          }
+
+          if (this.removeSpecial) {
+            text = text.replace(/[^A-Za-z0-9\s_-]/g, '');
+          }
+
+          return text
+            .replace(/[_-]+/g, ' ')
+            .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(word => word.toLowerCase());
+        },
+
+        convertOne(value, format) {
+          const parts = this.words(value);
+          if (!parts.length) return '';
+          switch (format) {
+            case 'kebab': return parts.join('-');
+            case 'camel': return parts[0] + parts.slice(1).map(this.capitalize).join('');
+            case 'pascal': return parts.map(this.capitalize).join('');
+            case 'snake': return parts.join('_');
+            case 'screaming': return parts.join('_').toUpperCase();
+            case 'title': return parts.map(this.capitalize).join(' ');
+            default: return parts.join('-');
+          }
+        },
+
+        capitalize(word) {
+          return word ? word.charAt(0).toUpperCase() + word.slice(1) : '';
+        },
+
+        resultFor(format) {
+          if (!this.input.trim()) return '';
+          if (this.bulkMode) {
+            return this.input.split(/\r?\n/).map(line => line.trim() ? this.convertOne(line, format) : '').join('\n');
+          }
+          return this.convertOne(this.input, format);
+        },
+
+        async copyText(text, message) {
+          if (!text) return;
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              const helper = document.createElement('textarea');
+              helper.value = text;
+              helper.style.position = 'fixed';
+              helper.style.opacity = '0';
+              document.body.appendChild(helper);
+              helper.select();
+              const successful = document.execCommand('copy');
+              helper.remove();
+              if (!successful) throw new Error('Clipboard unavailable');
+            }
+            this.toast = message;
+          } catch (_) {
+            this.toast = 'Copy was blocked by the browser. Please select and copy the output manually.';
+          }
+        },
+
+        async copyFormat(format) {
+          await this.copyText(this.resultFor(format), 'Copied ' + format + ' output to clipboard.');
+          this.copiedFormat = format;
+          window.setTimeout(() => {
+            if (this.copiedFormat === format) this.copiedFormat = '';
+          }, 1400);
+        },
+
+        async copyAll() {
+          const text = this.formats.map(format => format.label + '\n' + this.resultFor(format)).join('\n\n');
+          await this.copyText(text, 'All conversion results copied.');
         }
       };
     }
